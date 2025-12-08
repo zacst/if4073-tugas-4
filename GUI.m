@@ -3,150 +3,206 @@ function GUI
     % This script creates a modern UI using MATLAB's uifigure framework.
     
     % 1. MAIN VARIABLES (State Management)
-    % These variables are shared between the nested functions below
     trainedModel = []; 
-    currentImg = [];
+    currentFruitImg = [];
+    currentPlateImg = [];
     
     % 2. CREATE THE MAIN WINDOW
-    % Get screen size to center the window
     screenSize = get(0, 'ScreenSize');
-    figWidth = 500;
-    figHeight = 600;
+    figWidth = 600;
+    figHeight = 700;
     posX = (screenSize(3) - figWidth) / 2;
     posY = (screenSize(4) - figHeight) / 2;
 
-    fig = uifigure('Name', 'Fruit Recognition System', ...
+    fig = uifigure('Name', 'Image Processing System', ...
         'Position', [posX, posY, figWidth, figHeight], ...
-        'Color', [0.95 0.95 0.95]); % Light gray background
+        'Color', [0.95 0.95 0.95]);
 
-    % 3. INITIALIZE SYSTEM
-    loadModel();
-
-    % 4. UI COMPONENTS LAYOUT
+    % Create Tab Group
+    tabGroup = uitabgroup(fig, 'Position', [0, 0, figWidth, figHeight]);
     
-    % Title Label
-    uilabel(fig, ...
-        'Position', [50, 550, 400, 30], ...
+    % --- TAB 1: FRUIT RECOGNITION ---
+    tabFruit = uitab(tabGroup, 'Title', 'Fruit Recognition');
+    
+    % Title Label (Fruit)
+    uilabel(tabFruit, ...
+        'Position', [50, 600, 500, 30], ...
         'Text', 'Sistem Pengenalan Buah', ...
         'FontSize', 20, ...
         'FontWeight', 'bold', ...
         'HorizontalAlignment', 'center');
 
-    % Axes (The Image Display)
-    % We use 'uiaxes' for modern apps. We hide the X/Y tick marks.
-    ax = uiaxes(fig, ...
-        'Position', [50, 200, 400, 320], ...
+    % Axes (Fruit)
+    axFruit = uiaxes(tabFruit, ...
+        'Position', [100, 250, 400, 320], ...
         'XTick', [], 'YTick', [], 'Box', 'on');
-    title(ax, 'No Image Loaded');
+    title(axFruit, 'No Image Loaded');
 
-    % "Load Image" Button
-    uibutton(fig, ...
+    % "Load Image" Button (Fruit)
+    uibutton(tabFruit, ...
         'Text', '1. Load Image', ...
-        'Position', [50, 120, 180, 40], ...
-        'BackgroundColor', [0.2 0.6 0.8], ... % Blueish
+        'Position', [100, 170, 180, 40], ...
+        'BackgroundColor', [0.2 0.6 0.8], ...
         'FontColor', 'white', ...
-        'ButtonPushedFcn', @loadButtonPushed);
+        'ButtonPushedFcn', @loadFruitButtonPushed);
 
-    % "Identify" Button
-    uibutton(fig, ...
+    % "Identify" Button (Fruit)
+    uibutton(tabFruit, ...
         'Text', '2. Identify Fruit', ...
-        'Position', [270, 120, 180, 40], ...
-        'BackgroundColor', [0.2 0.7 0.3], ... % Greenish
+        'Position', [320, 170, 180, 40], ...
+        'BackgroundColor', [0.2 0.7 0.3], ...
         'FontColor', 'white', ...
         'FontSize', 14, ...
-        'ButtonPushedFcn', @identifyButtonPushed);
+        'ButtonPushedFcn', @identifyFruitButtonPushed);
 
-    % Result Label (Large Text)
-    resultLabel = uilabel(fig, ...
-        'Position', [50, 40, 400, 50], ...
+    % Result Label (Fruit)
+    resultLabelFruit = uilabel(tabFruit, ...
+        'Position', [50, 90, 500, 50], ...
         'Text', 'Waiting for input...', ...
         'FontSize', 24, ...
         'FontWeight', 'bold', ...
         'HorizontalAlignment', 'center', ...
-        'FontColor', [0.5 0.5 0.5]); % Gray initially
+        'FontColor', [0.5 0.5 0.5]);
+
+    % --- TAB 2: PLATE RECOGNITION ---
+    tabPlate = uitab(tabGroup, 'Title', 'Plate Recognition');
+    
+    % Title Label (Plate)
+    uilabel(tabPlate, ...
+        'Position', [50, 600, 500, 30], ...
+        'Text', 'Automatic Plate Number Recognition', ...
+        'FontSize', 20, ...
+        'FontWeight', 'bold', ...
+        'HorizontalAlignment', 'center');
+
+    % Axes (Plate)
+    axPlate = uiaxes(tabPlate, ...
+        'Position', [100, 250, 400, 320], ...
+        'XTick', [], 'YTick', [], 'Box', 'on');
+    title(axPlate, 'No Image Loaded');
+
+    % "Load Image" Button (Plate)
+    uibutton(tabPlate, ...
+        'Text', '1. Load Plate Image', ...
+        'Position', [100, 170, 180, 40], ...
+        'BackgroundColor', [0.2 0.6 0.8], ...
+        'FontColor', 'white', ...
+        'ButtonPushedFcn', @loadPlateButtonPushed);
+
+    % "Recognize" Button (Plate)
+    uibutton(tabPlate, ...
+        'Text', '2. Recognize Plate', ...
+        'Position', [320, 170, 180, 40], ...
+        'BackgroundColor', [0.8 0.4 0.2], ...
+        'FontColor', 'white', ...
+        'FontSize', 14, ...
+        'ButtonPushedFcn', @recognizePlateButtonPushed);
+
+    % Result Label (Plate)
+    resultLabelPlate = uilabel(tabPlate, ...
+        'Position', [50, 90, 500, 50], ...
+        'Text', 'Waiting for input...', ...
+        'FontSize', 24, ...
+        'FontWeight', 'bold', ...
+        'HorizontalAlignment', 'center', ...
+        'FontColor', [0.5 0.5 0.5]);
+
+    % 3. INITIALIZE SYSTEM
+    loadModel();
 
     % ---------------------------------------------------------
-    % 5. CALLBACK FUNCTIONS (The Logic)
+    % 4. CALLBACK FUNCTIONS
     % ---------------------------------------------------------
 
-    % Function to Load Model on Startup
+    % --- FRUIT FUNCTIONS ---
     function loadModel()
         try
             data = load('TrainedFruitModel.mat');
-            % Handle cases where the variable name might differ
             if isfield(data, 'svmModel')
                 trainedModel = data.svmModel;
             else
-                % Just take the first variable found if name is wrong
                 vars = fieldnames(data);
                 trainedModel = data.(vars{1});
             end
         catch
-            uialert(fig, 'TrainedFruitModel.mat not found! Please run training first.', 'Error');
+            % Don't show alert immediately, maybe just log or ignore until needed
         end
     end
 
-    % Callback: User clicks "Load Image"
-    function loadButtonPushed(~, ~)
-        [file, path] = uigetfile({'*.jpg;*.png;*.bmp;*.jpeg', 'Image Files'});
-        if isequal(file, 0)
-            return; % Cancelled
-        end
+    function loadFruitButtonPushed(~, ~)
+        [file, path] = uigetfile({'*.jpg;*.png;*.bmp;*.jpeg;*.avif', 'Image Files'});
+        if isequal(file, 0), return; end
         
         fullPath = fullfile(path, file);
-        currentImg = imread(fullPath);
-        
-        % Display image
-        imshow(currentImg, 'Parent', ax);
-        title(ax, 'Image Loaded');
-        
-        % Reset Result Label
-        resultLabel.Text = 'Ready to Identify';
-        resultLabel.FontColor = 'black';
+        currentFruitImg = imread(fullPath);
+        imshow(currentFruitImg, 'Parent', axFruit);
+        title(axFruit, 'Image Loaded');
+        resultLabelFruit.Text = 'Ready to Identify';
+        resultLabelFruit.FontColor = 'black';
     end
 
-    % Callback: User clicks "Identify Fruit"
-    function identifyButtonPushed(~, ~)
-        % Validation
-        if isempty(currentImg)
+    function identifyFruitButtonPushed(~, ~)
+        if isempty(currentFruitImg)
             uialert(fig, 'Please load an image first.', 'Warning');
             return;
         end
-        
         if isempty(trainedModel)
             uialert(fig, 'Model not loaded. Cannot predict.', 'Error');
             return;
         end
         
-        % --- PROCESSING ---
-        % 1. Extract Features (Calls your separate .m file)
         try
-            features = extractFruitFeatures(currentImg);
+            features = extractFruitFeatures(currentFruitImg);
         catch ME
             uialert(fig, ['Error in feature extraction: ' ME.message], 'Code Error');
             return;
         end
         
-        % 2. Predict
         prediction = predict(trainedModel, features);
+        finalText = char(prediction);
+        resultLabelFruit.Text = ['Detected: ' finalText];
         
-        % 3. Display Result
-        finalText = char(prediction); % Convert categorical/cell to string
-        resultLabel.Text = ['Detected: ' finalText];
-        
-        % Dynamic Text Color
         switch lower(finalText)
-            case 'apple'
-                resultLabel.FontColor = [0.8 0 0]; % Red
-            case 'orange'
-                resultLabel.FontColor = [1 0.5 0]; % Orange
-            case 'pear'
-                resultLabel.FontColor = [0.6 0.8 0.2]; % Pear Green
-            otherwise
-                resultLabel.FontColor = [0 0 0]; % Black
+            case 'apple', resultLabelFruit.FontColor = [0.8 0 0];
+            case 'orange', resultLabelFruit.FontColor = [1 0.5 0];
+            case 'pear', resultLabelFruit.FontColor = [0.6 0.8 0.2];
+            otherwise, resultLabelFruit.FontColor = [0 0 0];
+        end
+        title(axFruit, ['Result: ' finalText]);
+    end
+
+    % --- PLATE FUNCTIONS ---
+    function loadPlateButtonPushed(~, ~)
+        [file, path] = uigetfile({'*.jpg;*.png;*.bmp;*.jpeg;*.avif', 'Image Files'});
+        if isequal(file, 0), return; end
+        
+        fullPath = fullfile(path, file);
+        currentPlateImg = imread(fullPath);
+        imshow(currentPlateImg, 'Parent', axPlate);
+        title(axPlate, 'Image Loaded');
+        resultLabelPlate.Text = 'Ready to Recognize';
+        resultLabelPlate.FontColor = 'black';
+    end
+
+    function recognizePlateButtonPushed(~, ~)
+        if isempty(currentPlateImg)
+            uialert(fig, 'Please load an image first.', 'Warning');
+            return;
         end
         
-        title(ax, ['Result: ' finalText]);
+        try
+            % Call the processing function
+            [plateText, processedImg] = processPlate(currentPlateImg);
+            
+            % Display result
+            imshow(processedImg, 'Parent', axPlate);
+            resultLabelPlate.Text = ['Plate: ' plateText];
+            resultLabelPlate.FontColor = [0 0 0.8]; % Blue
+            title(axPlate, ['Result: ' plateText]);
+            
+        catch ME
+            uialert(fig, ['Error in processing: ' ME.message], 'Error');
+        end
     end
 
 end
