@@ -161,9 +161,92 @@ function GUI()
     text(0.5, 0.5, 'Load video to begin', 'Parent', appData.AxHuman, ...
         'HorizontalAlignment', 'center', 'FontSize', 14, 'Color', [0.6 0.6 0.6]);
 
+    % ==========================================================
+    % TAB 4: DEEP LEARNING (Fruit & Plate)
+    % ==========================================================
+    tabDL = uitab(tabGroup, 'Title', 'Deep Learning');
+    
+    % Nested Tab Group for DL
+    tabGroupDL = uitabgroup(tabDL, 'Position', [0 0 1 1]);
+    
+    % --- DL Fruit Tab ---
+    tabDLFruit = uitab(tabGroupDL, 'Title', 'DL Fruit');
+    
+    dlFruitImgPanel = uipanel(tabDLFruit, 'Title', '', ...
+        'Units', 'normalized', 'Position', [0.02 0.27 0.96 0.71], ... 
+        'BackgroundColor', theme.panel, 'BorderType', 'line');
+        
+    dlFruitCtrlPanel = uipanel(tabDLFruit, 'Title', 'DL Fruit Controls', ...
+        'Units', 'normalized', 'Position', [0.02 0.02 0.96 0.23], ... 
+        'BackgroundColor', theme.panel, 'FontName', theme.font, 'FontSize', 11);
+        
+    uicontrol(dlFruitCtrlPanel, 'Style', 'pushbutton', 'String', 'LOAD FRUIT', ...
+        'Units', 'normalized', 'Position', [0.02 0.4 0.20 0.4], ...
+        'BackgroundColor', theme.btnLoad, 'ForegroundColor', 'white', ...
+        'FontName', theme.font, 'FontSize', 11, 'FontWeight', 'bold', ...
+        'Callback', @(src, event) loadFruitImageDL(fig));
+        
+    uicontrol(dlFruitCtrlPanel, 'Style', 'pushbutton', 'String', 'IDENTIFY (CNN)', ...
+        'Units', 'normalized', 'Position', [0.24 0.4 0.20 0.4], ...
+        'BackgroundColor', theme.btnRun, 'ForegroundColor', 'white', ...
+        'FontName', theme.font, 'FontSize', 11, 'FontWeight', 'bold', ...
+        'Callback', @(src, event) identifyFruitDL(fig));
+        
+    appData.ResultLabelDLFruit = uicontrol(dlFruitCtrlPanel, 'Style', 'text', 'String', 'Waiting...', ...
+        'Units', 'normalized', 'Position', [0.68 0.15 0.30 0.5], ...
+        'BackgroundColor', theme.panel, 'FontName', theme.font, ...
+        'FontSize', 22, 'FontWeight', 'bold', 'HorizontalAlignment', 'center', ...
+        'ForegroundColor', [0.7 0.7 0.7]);
+        
+    appData.AxDLFruit = axes(dlFruitImgPanel, 'Position', [0.05 0.05 0.9 0.9]);
+    set(appData.AxDLFruit, 'XTick', [], 'YTick', [], 'Box', 'on', 'Color', [0.98 0.98 0.98]);
+    text(0.5, 0.5, 'Load Fruit for DL', 'Parent', appData.AxDLFruit, ...
+        'HorizontalAlignment', 'center', 'FontSize', 14, 'Color', [0.6 0.6 0.6]);
+        
+    % --- DL Plate Tab ---
+    tabDLPlate = uitab(tabGroupDL, 'Title', 'DL Plate');
+    
+    dlPlateImgPanel = uipanel(tabDLPlate, 'Title', '', ...
+        'Units', 'normalized', 'Position', [0.02 0.27 0.96 0.71], ... 
+        'BackgroundColor', theme.panel, 'BorderType', 'line');
+        
+    dlPlateCtrlPanel = uipanel(tabDLPlate, 'Title', 'DL Plate Controls', ...
+        'Units', 'normalized', 'Position', [0.02 0.02 0.96 0.23], ... 
+        'BackgroundColor', theme.panel, 'FontName', theme.font, 'FontSize', 11);
+        
+    uicontrol(dlPlateCtrlPanel, 'Style', 'pushbutton', 'String', 'LOAD PLATE', ...
+        'Units', 'normalized', 'Position', [0.02 0.4 0.20 0.4], ...
+        'BackgroundColor', theme.btnLoad, 'ForegroundColor', 'white', ...
+        'FontName', theme.font, 'FontSize', 11, 'FontWeight', 'bold', ...
+        'Callback', @(src, event) loadPlateImageDL(fig));
+        
+    uicontrol(dlPlateCtrlPanel, 'Style', 'pushbutton', 'String', 'RECOGNIZE (CNN)', ...
+        'Units', 'normalized', 'Position', [0.24 0.4 0.20 0.4], ...
+        'BackgroundColor', theme.btnExtra, 'ForegroundColor', 'white', ...
+        'FontName', theme.font, 'FontSize', 11, 'FontWeight', 'bold', ...
+        'Callback', @(src, event) recognizePlateDL(fig));
+        
+    appData.ResultLabelDLPlate = uicontrol(dlPlateCtrlPanel, 'Style', 'text', 'String', 'Waiting...', ...
+        'Units', 'normalized', 'Position', [0.68 0.15 0.30 0.5], ...
+        'BackgroundColor', theme.panel, 'FontName', theme.font, ...
+        'FontSize', 22, 'FontWeight', 'bold', 'HorizontalAlignment', 'center', ...
+        'ForegroundColor', [0.7 0.7 0.7]);
+        
+    appData.AxDLPlate = axes(dlPlateImgPanel, 'Position', [0.05 0.05 0.9 0.9]);
+    set(appData.AxDLPlate, 'XTick', [], 'YTick', [], 'Box', 'on', 'Color', [0.98 0.98 0.98]);
+    text(0.5, 0.5, 'Load Plate for DL', 'Parent', appData.AxDLPlate, ...
+        'HorizontalAlignment', 'center', 'FontSize', 14, 'Color', [0.6 0.6 0.6]);
+
+    % Initialize DL Models in AppData
+    appData.DLFruitModel = [];
+    appData.DLPlateModel = [];
+    appData.CurrentDLFruitImg = [];
+    appData.CurrentDLPlateImg = [];
+
     % Update UserData and Initialize
     set(fig, 'UserData', appData);
     loadModel(fig);
+    loadDLModels(fig);
 
 end
 
@@ -321,4 +404,103 @@ function startHumanTracking(fig)
     end
     
     set(appData.ResultLabelHuman, 'String', 'Finished.');
+end
+
+% ==========================================================
+% LOGIC: DEEP LEARNING
+% ==========================================================
+function loadDLModels(fig)
+    appData = get(fig, 'UserData');
+    
+    % Load Fruit DL Model
+    try
+        data = load('TrainedFruitModelDL.mat');
+        if isfield(data, 'fruitNet')
+            appData.DLFruitModel = data.fruitNet;
+        end
+    catch
+        % disp('DL Fruit Model not found.');
+    end
+    
+    % Load Plate DL Model
+    try
+        data = load('TrainedPlateModelDL.mat');
+        if isfield(data, 'charNet')
+            appData.DLPlateModel = data.charNet;
+        end
+    catch
+        % disp('DL Plate Model not found.');
+    end
+    
+    set(fig, 'UserData', appData);
+end
+
+function loadFruitImageDL(fig)
+    [filename, pathname] = uigetfile({'*.jpg;*.png;*.bmp;*.jpeg'}, 'Select Fruit');
+    if filename == 0; return; end
+    fullPath = fullfile(pathname, filename);
+    img = imread(fullPath);
+    appData = get(fig, 'UserData');
+    appData.CurrentDLFruitImg = img;
+    cla(appData.AxDLFruit); imshow(img, 'Parent', appData.AxDLFruit);
+    set(appData.ResultLabelDLFruit, 'String', 'Ready', 'ForegroundColor', [0.2 0.2 0.2]);
+    set(fig, 'UserData', appData);
+end
+
+function identifyFruitDL(fig)
+    appData = get(fig, 'UserData');
+    if isempty(appData.CurrentDLFruitImg), msgbox('Load fruit first.', 'Warning', 'warn'); return; end
+    
+    % Try to load model if not loaded
+    if isempty(appData.DLFruitModel)
+        loadDLModels(fig);
+        appData = get(fig, 'UserData');
+        if isempty(appData.DLFruitModel)
+            msgbox('DL Fruit Model (TrainedFruitModelDL.mat) not found. Please run trainFruitDL.m first.', 'Error', 'error'); 
+            return; 
+        end
+    end
+    
+    try
+        [label, score] = processFruitDL(appData.CurrentDLFruitImg, appData.DLFruitModel);
+        set(appData.ResultLabelDLFruit, 'String', [upper(label) ' (' num2str(score*100, '%.1f') '%)']);
+        set(appData.ResultLabelDLFruit, 'ForegroundColor', [0 0.5 0]);
+    catch ME
+        errordlg(ME.message, 'Error');
+    end
+end
+
+function loadPlateImageDL(fig)
+    [filename, pathname] = uigetfile({'*.jpg;*.png;*.bmp;*.jpeg'}, 'Select Plate');
+    if filename == 0; return; end
+    fullPath = fullfile(pathname, filename);
+    img = imread(fullPath);
+    appData = get(fig, 'UserData');
+    appData.CurrentDLPlateImg = img;
+    cla(appData.AxDLPlate); imshow(img, 'Parent', appData.AxDLPlate);
+    set(appData.ResultLabelDLPlate, 'String', 'Ready', 'ForegroundColor', [0.2 0.2 0.2]);
+    set(fig, 'UserData', appData);
+end
+
+function recognizePlateDL(fig)
+    appData = get(fig, 'UserData');
+    if isempty(appData.CurrentDLPlateImg), msgbox('Load plate first.', 'Warning', 'warn'); return; end
+    
+    % Try to load model if not loaded
+    if isempty(appData.DLPlateModel)
+        loadDLModels(fig);
+        appData = get(fig, 'UserData');
+        if isempty(appData.DLPlateModel)
+            msgbox('DL Plate Model (TrainedPlateModelDL.mat) not found. Please run trainPlateCharDL.m first.', 'Error', 'error'); 
+            return; 
+        end
+    end
+    
+    try
+        [plateText, processedImg] = processPlateDL(appData.CurrentDLPlateImg, appData.DLPlateModel);
+        if ~isempty(processedImg), imshow(processedImg, 'Parent', appData.AxDLPlate); end
+        set(appData.ResultLabelDLPlate, 'String', upper(plateText), 'ForegroundColor', [0 0 0.8]);
+    catch ME
+        errordlg(ME.message, 'Error');
+    end
 end
